@@ -1,103 +1,150 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+interface AbcItem {
+  id: number;
+  documentId: string;
+  abc_id: string;
+  abc_description: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [abcs, setAbcs] = useState<AbcItem[]>([]);
+  const [newId, setNewId] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [deleteId, setDeleteId] = useState('');
+  const [updateDocId, setUpdateDocId] = useState('');
+  const [updateDescription, setUpdateDescription] = useState('');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const fetchData = async () => {
+    const res = await fetch('http://localhost:1337/api/abcs');
+    const json = await res.json();
+    setAbcs(json.data);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleCreate = async () => {
+    const res = await fetch('http://localhost:1337/api/abcs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          abc_id: newId,
+          abc_description: newDescription,
+        }
+      })
+    });
+
+    if (res.ok) {
+      alert('Created successfully!');
+      setNewId('');
+      setNewDescription('');
+      fetchData();
+    } else {
+      alert('Error creating item!');
+    }
+  };
+
+  const handleDelete = async () => {
+    const res = await fetch(`http://localhost:1337/api/abcs/${deleteId}`, {
+      method: 'DELETE'
+    });
+
+    if (res.ok) {
+      alert('Đã xoá bản ghi!');
+      setDeleteId('');
+      fetchData();
+    } else {
+      alert('Xoá thất bại!');
+    }
+  };
+
+  const handleUpdate = async () => {
+    const itemToUpdate = abcs.find(item => item.documentId === updateDocId.trim());
+
+    if (!itemToUpdate) {
+      alert('Không tìm thấy bản ghi với Document ID này!');
+      return;
+    }
+
+    const res = await fetch(`http://localhost:1337/api/abcs/${itemToUpdate.documentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          abc_description: updateDescription,
+        },
+      }),
+    });
+
+    if (res.ok) {
+      alert('Cập nhật thành công!');
+      setUpdateDocId('');
+      setUpdateDescription('');
+      fetchData();
+    } else {
+      alert('Cập nhật thất bại!');
+    }
+  };
+
+  return (
+    <div className='p-5'>
+      <table className="mb-5 border border-black-300">
+        <thead>
+          <tr>
+            <th className="border px-4 py-2">Document ID</th>
+            <th className="border px-4 py-2">ID</th>
+            <th className="border px-4 py-2">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {abcs.map((abc) => (
+            <tr key={abc.id}>
+              <td className="border px-4 py-2 text-center">{abc.documentId}</td>
+              <td className="border px-4 py-2 text-center">{abc.abc_id}</td>
+              <td className="border px-4 py-2">{abc.abc_description}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <form action="" onSubmit={(e) => e.preventDefault()}>
+        <input className='border rounded-sm mb-5' placeholder='Enter new id to create' type="text" value={newId} onChange={(e) => setNewId(e.target.value)} />
+        <input className='border rounded-sm mb-5 ml-5' placeholder='Enter description' type="text" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} />
+        <button className='border rounded-sm ml-5' onClick={handleCreate}>Create</button>
+        <br />
+        <input className='border rounded-sm' placeholder='Enter document id to delete' type="text" value={deleteId} onChange={(e) => setDeleteId(e.target.value)} />
+        <button className='ml-5 border rounded-sm mb-5' onClick={handleDelete}>Delete</button>
+        <br />
+        <input
+          className='border rounded-sm mt-5'
+          placeholder='Document ID cần cập nhật'
+          type="text"
+          value={updateDocId}
+          onChange={(e) => setUpdateDocId(e.target.value)}
+        />
+        <input
+          className='border rounded-sm ml-5'
+          placeholder='Description mới'
+          type="text"
+          value={updateDescription}
+          onChange={(e) => setUpdateDescription(e.target.value)}
+        />
+        <button className='ml-5 border rounded-sm' onClick={handleUpdate}>Update</button>
+      </form>
+      <Link href="/login">
+        Login
+      </Link>
     </div>
   );
 }

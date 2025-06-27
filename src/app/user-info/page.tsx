@@ -48,6 +48,12 @@ export default function UserInfo() {
             >
                 Logout
             </button>
+            <br />
+            <button
+                onClick={() => router.push("/")}
+            >
+                CRUD
+            </button>
         </div>
     );
 }

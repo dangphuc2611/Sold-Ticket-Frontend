@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+type User = {
+  id: number;
+  username: string;
+  email: string;
+};
 interface AbcItem {
   id: number;
   documentId: string;
@@ -13,12 +20,14 @@ interface AbcItem {
 }
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
   const [abcs, setAbcs] = useState<AbcItem[]>([]);
   const [newId, setNewId] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [deleteId, setDeleteId] = useState('');
   const [updateDocId, setUpdateDocId] = useState('');
   const [updateDescription, setUpdateDescription] = useState('');
+  const router = useRouter();
 
   const fetchData = async () => {
     const res = await fetch('http://localhost:1337/api/abcs');
@@ -30,11 +39,32 @@ export default function Home() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const jwt = localStorage.getItem("token");
+    if (!jwt) return;
+
+    fetch("http://localhost:1337/api/users/me", {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Unauthorized");
+        return res.json();
+      })
+      .then((data) => setUser(data))
+      .catch(() => {
+        localStorage.removeItem("token");
+        router.push("/login");
+      });
+  }, []);
+
   const handleCreate = async () => {
     const res = await fetch('http://localhost:1337/api/abcs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         data: {
@@ -56,15 +86,18 @@ export default function Home() {
 
   const handleDelete = async () => {
     const res = await fetch(`http://localhost:1337/api/abcs/${deleteId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
     });
 
     if (res.ok) {
-      alert('Đã xoá bản ghi!');
+      alert('Delete successful!');
       setDeleteId('');
       fetchData();
     } else {
-      alert('Xoá thất bại!');
+      alert('Delete failed!');
     }
   };
 
@@ -80,6 +113,7 @@ export default function Home() {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         data: {
@@ -89,17 +123,20 @@ export default function Home() {
     });
 
     if (res.ok) {
-      alert('Cập nhật thành công!');
+      alert('Update successful!');
       setUpdateDocId('');
       setUpdateDescription('');
       fetchData();
     } else {
-      alert('Cập nhật thất bại!');
+      alert('Update failed!');
     }
   };
 
   return (
     <div className='p-5'>
+      <h1>
+        User: {user ? user.username : ''}
+      </h1>
       <table className="mb-5 border border-black-300">
         <thead>
           <tr>
@@ -144,6 +181,10 @@ export default function Home() {
       </form>
       <Link href="/login">
         Login
+      </Link>
+      <br />
+      <Link href={"/user-info"}>
+        User Info
       </Link>
     </div>
   );
